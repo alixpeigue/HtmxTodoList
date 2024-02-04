@@ -74,22 +74,22 @@ async fn root(session: Session) -> impl IntoResponse {
                 <body class="w-1/2 m-auto">
                     <h1 class="text-3xl">TodoMVC</h1>
                     <select name="sort" hx-trigger="change" hx-get="/todos" hx-target="#todos">
-                        <option select="selected" value="All">All</option>
+                        <option select="selected" value="All">
+                            All
+                        </option>
                         <option value="Done">Done</option>
                         <option value="NotDone">Not done</option>
                     </select>
                     <div class="flex flex-col" id="todos">
-                        {todos.into_iter().map(|(id, todo)| view! {
-                            <Todo id todo/>
-                        }).collect_view()}
+                        {todos
+                            .into_iter()
+                            .map(|(id, todo)| view! { <Todo id todo/> })
+                            .collect_view()}
                     </div>
                     <hr class="w-full"/>
                     <form hx-post="/todos" hx-target="#todos" hx-swap="beforeend">
                         <input type="text" name="content"/>
-                        <button
-                            class="bg-teal-200 rounded-md p-2"
-                            type="submit"
-                        >
+                        <button class="bg-teal-200 rounded-md p-2" type="submit">
                             Add new
                         </button>
                     </form>
@@ -121,7 +121,7 @@ async fn get_todos(session: Session, Form(form): Form<GetTodosForm>) -> impl Int
             todos
                 .into_iter()
                 .filter(|el| filter(el))
-                .map(|(id, todo)| view! {<Todo id todo />})
+                .map(|(id, todo)| view! { <Todo id todo/> })
                 .collect_view()
         })
         .into_owned(),
@@ -142,9 +142,7 @@ async fn put_todo(
 
     Ok(Html(
         leptos::ssr::render_to_string(move || {
-            view! {
-                <Todo id=id todo=todo/>
-            }
+            view! { <Todo id=id todo=todo/> }
         })
         .into_owned(),
     ))
@@ -165,7 +163,7 @@ async fn create_todo(session: Session, Form(form): Form<CreateTodoForm>) -> impl
     session.insert(INDEX_KEY, i + 1).await.unwrap();
     todos.insert(i + 1, todo.clone());
     session.insert(TODOS_KEY, todos).await.unwrap();
-    Html(leptos::ssr::render_to_string(move || view! {<Todo id=i+1 todo=todo/>}).into_owned())
+    Html(leptos::ssr::render_to_string(move || view! { <Todo id=i + 1 todo=todo/> }).into_owned())
 }
 
 async fn delete_todo(
@@ -181,21 +179,21 @@ async fn delete_todo(
 #[component]
 fn Todo(id: usize, todo: Todo) -> impl IntoView {
     view! {
-        <div id={format!("todo-{id}")} class="w-full">
+        <div id=format!("todo-{id}") class="w-full">
             <hr class="w-full"/>
             <div class="flex flex-row justify-between w-full text-xl">
                 <p>{todo.content}</p>
                 <p>{if todo.done { "done" } else { "not done" }}</p>
                 <button
-                    hx-put={format!("todos/{id}")}
-                    hx-target={format!("#todo-{id}")}
+                    hx-put=format!("todos/{id}")
+                    hx-target=format!("#todo-{id}")
                     hx-swap="outerHTML"
                 >
                     Mark as done
                 </button>
                 <button
-                    hx-delete={format!("todos/{id}")}
-                    hx-target={format!("#todo-{id}")}
+                    hx-delete=format!("todos/{id}")
+                    hx-target=format!("#todo-{id}")
                     hx-swap="delete"
                 >
                     Delete
