@@ -33,6 +33,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(root))
+        .route("/todos", get(get_todos))
         .route("/todos", post(create_todo))
         .route("/todos/:id", put(put_todo))
         .route("/todos/:id", delete(delete_todo))
@@ -72,6 +73,11 @@ async fn root(session: Session) -> impl IntoResponse {
                 </head>
                 <body class="w-1/2 m-auto">
                     <h1 class="text-3xl">TodoMVC</h1>
+                    <select name="sort" hx-trigger="change" hx-get="/todos" hx-target="#todos">
+                        <option select="selected" value="all">All</option>
+                        <option value="done">Done</option>
+                        <option value="not done">Not done</option>
+                    </select>
                     <div class="flex flex-col" id="todos">
                         {todos.into_iter().map(|(id, todo)| view! {
                             <Todo id todo/>
@@ -89,6 +95,33 @@ async fn root(session: Session) -> impl IntoResponse {
                     </form>
                 </body>
             }
+        })
+        .into_owned(),
+    )
+}
+
+#[derive(Deserialize)]
+struct GetTodosForm {
+    sort: String,
+}
+
+async fn get_todos(session: Session, Form(form): Form<GetTodosForm>) -> impl IntoResponse {
+    let todos: BTreeMap<usize, Todo> = session.get(TODOS_KEY).await.unwrap().unwrap();
+    let filter: Box<dyn Fn(&(usize, Todo)) -> bool> = if form.sort == "all" {
+        Box::new(|_| true)
+    } else if form.sort == "done" {
+        Box::new(|(_, todo)| todo.done)
+    } else {
+        Box::new(|(_, todo)| !todo.done)
+    };
+
+    Html(
+        leptos::ssr::render_to_string(move || {
+            todos
+                .into_iter()
+                .filter(|el| filter(el))
+                .map(|(id, todo)| view! {<Todo id todo />})
+                .collect_view()
         })
         .into_owned(),
     )
