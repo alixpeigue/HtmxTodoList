@@ -74,9 +74,9 @@ async fn root(session: Session) -> impl IntoResponse {
                 <body class="w-1/2 m-auto">
                     <h1 class="text-3xl">TodoMVC</h1>
                     <select name="sort" hx-trigger="change" hx-get="/todos" hx-target="#todos">
-                        <option select="selected" value="all">All</option>
-                        <option value="done">Done</option>
-                        <option value="not done">Not done</option>
+                        <option select="selected" value="All">All</option>
+                        <option value="Done">Done</option>
+                        <option value="NotDone">Not done</option>
                     </select>
                     <div class="flex flex-col" id="todos">
                         {todos.into_iter().map(|(id, todo)| view! {
@@ -101,18 +101,19 @@ async fn root(session: Session) -> impl IntoResponse {
 }
 
 #[derive(Deserialize)]
-struct GetTodosForm {
-    sort: String,
+#[serde(tag = "sort")]
+enum GetTodosForm {
+    All,
+    Done,
+    NotDone,
 }
 
 async fn get_todos(session: Session, Form(form): Form<GetTodosForm>) -> impl IntoResponse {
     let todos: BTreeMap<usize, Todo> = session.get(TODOS_KEY).await.unwrap().unwrap();
-    let filter: Box<dyn Fn(&(usize, Todo)) -> bool> = if form.sort == "all" {
-        Box::new(|_| true)
-    } else if form.sort == "done" {
-        Box::new(|(_, todo)| todo.done)
-    } else {
-        Box::new(|(_, todo)| !todo.done)
+    let filter: Box<dyn Fn(&(usize, Todo)) -> bool> = match form {
+        GetTodosForm::All => Box::new(|_| true),
+        GetTodosForm::Done => Box::new(|(_, todo)| todo.done),
+        GetTodosForm::NotDone => Box::new(|(_, todo)| !todo.done),
     };
 
     Html(
